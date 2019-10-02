@@ -30,7 +30,10 @@ const gst = {
   },
   isGameStarted: false,
   isGamePaused: false,
-  pauseScreenIsDrawn: false
+  isGameOver: false,
+  pauseScreenIsDrawn: false,
+  snakeSpeed: 10,
+  pelletsEaten: 0
 };
 
 //controls event listener
@@ -180,7 +183,14 @@ function r() {
 function isTherePellet() {
   //conditional under directions if coordiantes of new snake squar === pellet coordinates dont pop
   if (gst.pellet.x === gst.snake[0].x && gst.pellet.y === gst.snake[0].y) {
+    //modify score, every 3rd pellet eaten reduce gst.snakeSpeed (which increases the speed in gameLoop)
     gst.score += 10;
+    gst.pelletsEaten++;
+    if (gst.pelletsEaten !== 0 && gst.pelletsEaten % 2 === 0) {
+      if (gst.snakeSpeed > 5) {
+        gst.snakeSpeed--;
+      }
+    }
     makeNewPellet();
     return true;
   }
@@ -212,9 +222,26 @@ function makeNewPellet() {
 function checkForGameOver() {
   gst.snake.slice(3).forEach(s => {
     if (s.x === gst.snake[0].x && s.y === gst.snake[0].y) {
-      console.log("Game Over");
+      // ends game - used in draw()
+      gst.isGameOver = true;
     }
   });
+}
+
+function drawGameOver() {
+  //add Game over text
+  ctx.font = "32px Arial";
+  ctx.fillStyle = "black";
+  ctx.fillText("GAME OVER", 50, canvas.height / 2);
+  ctx.font = "28px Arial";
+  ctx.fillText("SCORE: " + gst.score, 70, canvas.height/2 + 34);
+  //hit a to restart
+  canvas.addEventListener('click', restartGame);
+}
+
+function restartGame() {
+  //used in drawGameOver
+  document.location.reload();
 }
 
 function update() {
@@ -248,17 +275,20 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawPellet();
   drawSnake();
+  if (gst.isGameOver) {
+    drawGameOver();
+  }
 }
 
 let counter = 0;
 
 function gameLoop() {
-  if (gst.isGameStarted) {
+  if (gst.isGameStarted && !gst.isGameOver) {
     if (gst.isGamePaused) {
       drawPauseScreen();
     } else {
       counter += 1;
-      if (counter % 10 === 0) {
+      if (counter % gst.snakeSpeed === 0) {
         update();
         draw();
       }
